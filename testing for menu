@@ -110,33 +110,7 @@ def game_levels():
 
 
 
-def game_layout(username: str, difficulty: List):
-    """
-    Functions to display the game layout
-    """
 
-    global FRM_INFO
-    global LBL_USERNAME
-    global LBL_POINTS
-    global LBL_TIME
-    global FRM_GAME
-    global BTN_TARGET
-
-    FRM_LEVELS.pack_forget()
-    LBL_LEVEL.pack_forget()
-    BTN_EASY.pack_forget()
-
-
-    # Display username and points
-    FRM_INFO = tk.Frame(master=window, padx=10, pady=10)
-    LBL_USERNAME = tk.Label(master=FRM_INFO, text=username, font=("Arial", 15))
-    LBL_POINTS = tk.Label(master=FRM_INFO, text=0, font=("Arial", 15))
-    LBL_TIME = tk.Label(master=FRM_INFO, text=10, font=("Arial", 15))
-
-    FRM_INFO.pack(fill=tk.BOTH, side=tk.TOP)
-    LBL_USERNAME.pack(side=tk.LEFT)
-    LBL_POINTS.pack(side=tk.LEFT)
-    LBL_TIME.pack(side=tk.RIGHT)
 
 
 
