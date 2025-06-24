@@ -1,0 +1,186 @@
+import tkinter as tk 
+import random
+import time
+from PIL import Image, ImageTk
+
+app = tk.Tk()
+app.title("Mental Math Trainer")
+app.geometry("750x500")
+app.configure(background='yellow')
+
+game_info = {
+    'player': "Guest",
+    'current_mode': "",
+    'right_answer': 0,
+    'score': 0,
+    'start_time': 0
+}
+
+LEADERBOARD_FILE = "leaderboard.txt"
+
+def clear_screen():
+    for widget in app.winfo_children():
+        widget.destroy()
+
+def show_intro():
+    clear_screen()
+    tk.Label(app, text="Mental Math Trainer", bg='yellow', font=("Arial", 22)).pack(pady=35)
+    tk.Label(app, text="Enter your name:", bg='yellow').pack()
+    name_box = tk.Entry(app, width=25)
+    name_box.pack()
+    try:
+        pil_image = Image.open("nerd.jpg")
+        pil_image = pil_image.resize((200, 200))
+        image = ImageTk.PhotoImage(pil_image)
+        image_label = tk.Label(app, image=image, bg='yellow')
+        image_label.image = image
+        image_label.pack(pady=10)
+    except Exception as e:
+        print(f"Error loading image: {e}")
+    tk.Button(app, text="Begin", command=lambda: show_modes(name_box.get()), bg='lime').pack(pady=30)
+
+def show_modes(name=None):
+    clear_screen()
+    if name and name.strip():
+        game_info['player'] = name.strip()
+    tk.Label(app, text=f"Hi {game_info['player']}! Choose mode:", bg='yellow', font=("Arial", 14)).pack(pady=25)
+    tk.Button(app, text="Addition-Easy", command=lambda: start_game('add'), height=2, width=20).pack(pady=8)
+    tk.Button(app, text="Subtraction-Easy", command=lambda: start_game('sub'), height=2, width=20).pack(pady=8)
+    tk.Button(app, text="Multiplication-Medium", command=lambda: start_game('mul'), height=2, width=20).pack(pady=8)
+    tk.Button(app, text="Division-Hard", command=lambda: start_game('div'), height=2, width=20).pack(pady=8)
+
+def start_game(mode):
+    clear_screen()
+    game_info['current_mode'] = mode
+    game_info['score'] = 0
+    game_info['start_time'] = time.time()
+
+    run_timer()
+    next_problem()
+
+def run_timer():
+    def update_timer():
+        remaining = 20 - int(time.time() - game_info['start_time'])
+        if remaining <= 0:
+            end_game()
+            return
+        timer_label.config(text=f"Time Left: {remaining}s")
+        app.after(1000, update_timer)
+
+    global timer_label
+    timer_label = tk.Label(app, text="", font=("Arial", 14), bg="yellow")
+    timer_label.pack()
+    update_timer()
+
+def next_problem():
+    clear_screen()
+    run_timer()
+    mode = game_info['current_mode']
+
+    if mode == 'add':
+        a = random.randint(12, 50)
+        b = random.randint(12, 50)
+        game_info['right_answer'] = a + b
+        problem = f"{a} + {b} = ?"
+    elif mode == 'sub':
+        a = random.randint(25, 60)
+        b = random.randint(10, 24)
+        game_info['right_answer'] = a - b
+        problem = f"{a} - {b} = ?"
+    elif mode == 'mul':
+        a = random.randint(6, 15)
+        b = random.randint(6, 15)
+        game_info['right_answer'] = a * b
+        problem = f"{a} × {b} = ?"
+    elif mode == 'div':
+        b = random.randint(2, 12)
+        game_info['right_answer'] = random.randint(3, 12)
+        a = game_info['right_answer'] * b
+        problem = f"{a} ÷ {b} = ?"
+    else:
+        problem = "Unknown mode"
+        game_info['right_answer'] = None
+
+    tk.Label(app, text=problem, font=("Arial", 24), bg="yellow").pack(pady=45)
+    global ans_entry
+    ans_entry = tk.Entry(app, font=("Arial", 14), width=10)
+    ans_entry.pack()
+    ans_entry.focus()
+    tk.Button(app, text="Check", command=lambda: check_ans(ans_entry.get())).pack(pady=20)
+
+def check_ans(answer):
+    try:
+        user_num = int(answer)
+    except:
+        user_num = None
+
+    if user_num == game_info['right_answer']:
+        game_info['score'] += 1
+
+    if time.time() - game_info['start_time'] >= 60:
+        end_game()
+    else:
+        next_problem()
+
+def end_game():
+    clear_screen()
+    savescore()
+    tk.Label(app, text=f"Time's up, {game_info['player']}!", font=("Arial", 18), bg='yellow').pack(pady=20)
+    tk.Label(app, text=f"Score: {game_info['score']}", font=("Arial", 16), bg='yellow').pack(pady=10)
+    tk.Button(app, text="Play Again", command=show_modes).pack(pady=10)
+    tk.Button(app, text="Show Leaderboard", command=showleaderboard).pack(pady=5)
+
+def savescore():
+    with open(LEADERBOARD_FILE, "a") as file:
+        file.write(f"{game_info['player']},{game_info['score']}\n")
+
+def showleaderboard():
+    clear_screen()
+    scores = []
+    try:
+        with open(LEADERBOARD_FILE, "r") as file:
+            for line in file:
+                name, score = line.strip().split(",")
+                scores.append((name, int(score)))
+    except FileNotFoundError:
+        scores = []
+
+    scores.sort(key=lambda x: x[1], reverse=True)
+
+    unique_scores = []
+    seen = set()
+    for entry in scores:
+        if entry not in seen:
+            unique_scores.append(entry)
+            seen.add(entry)
+        if len(unique_scores) == 3:
+            break
+
+    podium_positions = {
+        0: {'x': 270, 'y': 50, 'color': 'gold', 'label': '1st'},
+        1: {'x': 60, 'y': 120, 'color': 'silver', 'label': '2nd'},   
+        2: {'x': 480, 'y': 120, 'color': '#cd7f32', 'label': '3rd'}  
+    }
+
+    tk.Label(app, text="Leaderboard", font=("Arial", 20), bg='yellow').pack(pady=10)
+
+    podium_frame = tk.Frame(app, width=700, height=300, bg='yellow')
+    podium_frame.pack()
+
+    for i in range(3):
+        if i < len(unique_scores):
+            name, score = unique_scores[i]
+            pos = podium_positions[i]
+            box = tk.Label(podium_frame, 
+                           text=f"{pos['label']}\n{name}\n{score}", 
+                           font=("Arial", 14, "bold"), 
+                           bg=pos['color'], 
+                           width=12, height=6, 
+                           relief="raised", 
+                           borderwidth=3)
+            box.place(x=pos['x'], y=pos['y'])
+
+    tk.Button(app, text="Back", command=show_modes).pack(pady=20)
+
+show_intro()
+app.mainloop()
